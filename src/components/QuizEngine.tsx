@@ -3,8 +3,9 @@ import { UnitData, QuestionItem, StudentProfile, ExamAttempt } from '../types';
 import { useAntiCheat } from '../hooks/useAntiCheat';
 import { AntiCheatShield } from './AntiCheatShield';
 import { soundManager, speakText } from '../utils/sound';
-import { saveExamAttempt, TEACHER_EMAIL } from '../utils/storage';
+import { saveExamAttempt, analyzeMidtermDiagnostics, TEACHER_EMAIL } from '../utils/storage';
 import { generateMailtoLink, copyReportToClipboard, getReportEmailBody } from '../utils/reportSender';
+import { getUnitTitleById } from '../data/curriculumData';
 import confetti from 'canvas-confetti';
 import {
   Heart,
@@ -20,6 +21,9 @@ import {
   Clock,
   Printer,
   Sparkles,
+  BookOpen,
+  ArrowLeft,
+  GraduationCap,
 } from 'lucide-react';
 
 interface Props {
@@ -28,6 +32,7 @@ interface Props {
   speechRate: number;
   onFinish: (attempt: ExamAttempt) => void;
   onExit: () => void;
+  onNavigateToUnit?: (unitId: number) => void;
 }
 
 // Fisher-Yates shuffle
@@ -46,6 +51,7 @@ export const QuizEngine: React.FC<Props> = ({
   speechRate,
   onFinish,
   onExit,
+  onNavigateToUnit,
 }) => {
   // Anti-cheat hook active during quiz
   const { fraudCount, fraudLogs, lastWarning, clearWarning } = useAntiCheat({
@@ -151,12 +157,24 @@ export const QuizEngine: React.FC<Props> = ({
     setIsAnswerSubmitted(true);
     setIsCurrentCorrect(isCorrect);
 
-    // Save answer record
+    // Save answer record with diagnostic metadata
     const newLogItem = {
       questionText: currentQuestion.prompt,
       studentAnswer: studentAns,
       correctAnswer: currentQuestion.correctAnswer,
       isCorrect,
+      sourceUnitId: currentQuestion.sourceUnitId,
+      skillCategory:
+        currentQuestion.skillCategory ||
+        (currentQuestion.type === 'listening'
+          ? 'listening'
+          : currentQuestion.type.startsWith('translate')
+          ? 'translation'
+          : currentQuestion.type === 'word_scramble'
+          ? 'transcription'
+          : currentQuestion.type === 'fill_blank'
+          ? 'grammar'
+          : 'vocabulary'),
     };
     const updatedAnswersLog = [...answersLog, newLogItem];
     setAnswersLog(updatedAnswersLog);
@@ -171,7 +189,29 @@ export const QuizEngine: React.FC<Props> = ({
       setLives(newLives);
 
       if (newLives <= 0) {
-        // Game Over!
+        // Game Over! Save attempt so diagnostic remediation is registered
+        const attempt: ExamAttempt = {
+          id: `attempt_${Date.now()}`,
+          studentName: profile.name,
+          group: profile.group,
+          unitId: unit.id,
+          unitTitle: unit.title,
+          score,
+          maxScore: 20,
+          percentage: Math.round((score / 20) * 100),
+          passed: false,
+          livesRemaining: 0,
+          timeSpentSeconds: elapsedSeconds,
+          fraudAlertsCount: fraudCount,
+          fraudLog: [...fraudLogs],
+          timestamp: new Date().toISOString(),
+          teacherEmail: TEACHER_EMAIL,
+          answers: updatedAnswersLog,
+        };
+        saveExamAttempt(attempt);
+        setCompletedAttempt(attempt);
+        onFinish(attempt);
+
         setTimeout(() => {
           setIsGameOver(true);
         }, 1200);
@@ -299,6 +339,32 @@ export const QuizEngine: React.FC<Props> = ({
             </div>
           </div>
 
+          {/* Midterm Checkpoint Diagnostic Callout on Game Over */}
+          {unit.id === 50 && (
+            <div className="bg-red-50 border border-red-300 rounded-xl p-4 text-xs text-left space-y-2.5">
+              <div className="flex items-center space-x-2 font-bold text-red-950">
+                <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
+                <span>Diagnóstico Pedagógico de Debilidades (Punto de Control)</span>
+              </div>
+              <p className="text-red-900 leading-relaxed">
+                No has alcanzado el puntaje mínimo de mitad de curso. Según tus respuestas analizadas, tu mayor dificultad se encuentra en la{' '}
+                <strong>Unidad {analyzeMidtermDiagnostics(answersLog).worstUnitId}: {getUnitTitleById(analyzeMidtermDiagnostics(answersLog).worstUnitId)}</strong>.
+              </p>
+              <p className="text-slate-700 bg-white/70 p-2.5 rounded border border-red-200">
+                📌 <strong>Plan de Reforzamiento:</strong> Debes regresar a este nivel específico a repasar el vocabulario, escucha, transcripción y traducción para garantizar que estés en el camino correcto.
+              </p>
+              {onNavigateToUnit && (
+                <button
+                  onClick={() => onNavigateToUnit(analyzeMidtermDiagnostics(answersLog).worstUnitId)}
+                  className="w-full sm:w-auto py-2.5 px-4 bg-red-700 hover:bg-red-800 text-white font-bold rounded-xl shadow transition flex items-center justify-center space-x-2 cursor-pointer"
+                >
+                  <BookOpen className="w-4 h-4" />
+                  <span>Regresar a la Unidad {analyzeMidtermDiagnostics(answersLog).worstUnitId} a Reforzar</span>
+                </button>
+              )}
+            </div>
+          )}
+
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
             <button
               onClick={handleRetry}
@@ -404,6 +470,116 @@ export const QuizEngine: React.FC<Props> = ({
                 </p>
               </div>
             </div>
+
+            {/* Midterm Checkpoint Diagnostic Panel (when unit.id === 50) */}
+            {unit.id === 50 && (() => {
+              const diag = analyzeMidtermDiagnostics(answersLog);
+              return (
+                <div className="bg-slate-50 border-2 border-emerald-800/40 rounded-2xl p-5 space-y-4 text-xs">
+                  <div className="flex items-center space-x-2">
+                    <GraduationCap className="w-5 h-5 text-emerald-800" />
+                    <h4 className="font-bold text-slate-900 text-sm">
+                      Diagnóstico Pedagógico de Mitad de Curso (Bloques 1 y 2)
+                    </h4>
+                  </div>
+
+                  {/* Units breakdown */}
+                  <div className="space-y-1.5">
+                    <p className="font-semibold text-slate-700">Desglose de Aciertos y Errores por Unidad:</p>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                      {[1, 2, 3, 4, 5, 6].map((uNum) => {
+                        const mCount = diag.unitMistakes[uNum] || 0;
+                        const isWorst = !completedAttempt.passed && uNum === diag.worstUnitId && mCount > 0;
+                        return (
+                          <div
+                            key={uNum}
+                            className={`p-2.5 rounded-xl border ${
+                              isWorst
+                                ? 'bg-red-100 border-red-300 text-red-950 font-bold ring-2 ring-red-400/40'
+                                : mCount === 0
+                                ? 'bg-emerald-50 border-emerald-200 text-emerald-900'
+                                : 'bg-white border-slate-200 text-slate-700'
+                            }`}
+                          >
+                            <div className="flex items-center justify-between">
+                              <span className="font-bold">Unidad {uNum}</span>
+                              <span>{mCount === 0 ? '✔ 100%' : `❌ ${mCount} err`}</span>
+                            </div>
+                            <p className="text-[10px] text-slate-500 font-normal truncate mt-0.5">
+                              {getUnitTitleById(uNum).split('.')[1]?.trim() || getUnitTitleById(uNum)}
+                            </p>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Skills breakdown */}
+                  <div className="space-y-1.5 pt-1">
+                    <p className="font-semibold text-slate-700">Competencias Lingüísticas Evaluadas:</p>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                      <div className="bg-white p-2 rounded-lg border border-slate-200">
+                        <span className="text-slate-500 block text-[10px]">🎧 Escucha (Listening)</span>
+                        <span className="font-bold text-slate-900">
+                          {diag.skillMistakes.listening === 0 ? '✔ Dominado' : `${diag.skillMistakes.listening} errores`}
+                        </span>
+                      </div>
+                      <div className="bg-white p-2 rounded-lg border border-slate-200">
+                        <span className="text-slate-500 block text-[10px]">✏️ Transcripción y Orden</span>
+                        <span className="font-bold text-slate-900">
+                          {diag.skillMistakes.transcription === 0 ? '✔ Dominado' : `${diag.skillMistakes.transcription} errores`}
+                        </span>
+                      </div>
+                      <div className="bg-white p-2 rounded-lg border border-slate-200">
+                        <span className="text-slate-500 block text-[10px]">🌐 Traducción (ES ⇄ EN)</span>
+                        <span className="font-bold text-slate-900">
+                          {diag.skillMistakes.translation === 0 ? '✔ Dominado' : `${diag.skillMistakes.translation} errores`}
+                        </span>
+                      </div>
+                      <div className="bg-white p-2 rounded-lg border border-slate-200">
+                        <span className="text-slate-500 block text-[10px]">📖 Vocabulario & Conceptos</span>
+                        <span className="font-bold text-slate-900">
+                          {diag.skillMistakes.vocabulary === 0 ? '✔ Dominado' : `${diag.skillMistakes.vocabulary} errores`}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Remediation Action Callout if failed */}
+                  {!completedAttempt.passed ? (
+                    <div className="bg-red-50 border-2 border-red-300 rounded-xl p-4 text-xs text-red-950 space-y-2">
+                      <div className="flex items-center space-x-2 font-bold text-red-900 text-sm">
+                        <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
+                        <span>Plan de Reforzamiento Pedagógico Obligatorio</span>
+                      </div>
+                      <p className="leading-relaxed">
+                        El sistema determinó que tu mayor índice de error corresponde a la{' '}
+                        <strong>Unidad {diag.worstUnitId}: {getUnitTitleById(diag.worstUnitId)}</strong>.
+                        Para garantizar que estés en el camino correcto y domines los fundamentos antes de atender turistas en tours y restaurantes, has sido retornado a este nivel específico.
+                      </p>
+                      {onNavigateToUnit && (
+                        <button
+                          onClick={() => onNavigateToUnit(diag.worstUnitId)}
+                          className="w-full sm:w-auto mt-2 py-2.5 px-4 bg-red-700 hover:bg-red-800 text-white font-bold rounded-xl shadow transition flex items-center justify-center space-x-2 cursor-pointer"
+                        >
+                          <BookOpen className="w-4 h-4" />
+                          <span>Regresar a la Unidad {diag.worstUnitId} a Reforzar</span>
+                        </button>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="bg-emerald-50 border-2 border-emerald-300 rounded-xl p-4 text-xs text-emerald-950 space-y-1">
+                      <p className="font-bold text-emerald-900 text-sm">
+                        🎉 ¡Excelente Dominio Comprobado!
+                      </p>
+                      <p className="leading-relaxed">
+                        Has superado con éxito el Control de Mitad de Curso (Bloques 1 y 2). Tu base de vocabulario, escucha, transcripción y traducción está lista para las unidades avanzadas (Bloques 3 y 4).
+                      </p>
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
 
             {/* Teacher Dispatch Section (CRITICAL USER REQUIREMENT) */}
             <div className="bg-slate-900 text-white p-5 rounded-2xl space-y-3 print:hidden">

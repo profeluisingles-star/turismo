@@ -58,7 +58,22 @@ RESULTADOS DE LA EVALUACIÓN:
 
 AUDITORÍA DE INTEGRIDAD ACADÉMICA (ANTIFRAUDE):
 • Estado de seguridad: ${fraudStatus}${fraudLogDetails}
-
+${
+  attempt.assignedRemedialUnitId
+    ? `
+DIAGNÓSTICO PEDAGÓGICO DE DEBILIDADES (CHECKPOINT MITAD DE CURSO):
+• Estado: No superó el control de mitad de curso (mínimo 14/20 pts).
+• Unidad con mayor debilidad detectada: Unidad ${attempt.assignedRemedialUnitId}
+• Plan de Reforzamiento Obligatorio: El estudiante ha sido retornado a la Unidad ${attempt.assignedRemedialUnitId} para repasar vocabulario, escucha, transcripción y traducción antes de poder reintentar el examen de mitad de curso.
+`
+    : attempt.unitId === 50 && attempt.passed
+    ? `
+DIAGNÓSTICO PEDAGÓGICO (CHECKPOINT MITAD DE CURSO):
+• ¡ÉXITO! El estudiante demostró dominio integral de los Bloques 1 y 2 (Unidades 1 a 6).
+• Habilitado para avanzar a los bloques avanzados de guiado y restaurantes (Unidades 7 a 12).
+`
+    : ''
+}
 DETALLE ÍTEM POR ÍTEM (20 PREGUNTAS):
 -----------------------------------------------------
 ${answerDetails}

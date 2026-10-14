@@ -255,6 +255,16 @@ export const TeacherPortal: React.FC<Props> = ({
                             <span>Requiere Repaso</span>
                           </span>
                         )}
+                        {att.unitId === 50 && (
+                          <span className="text-[10px] font-black bg-indigo-100 text-indigo-900 px-2 py-0.5 rounded uppercase">
+                            Mitad de Curso
+                          </span>
+                        )}
+                        {att.assignedRemedialUnitId && (
+                          <span className="text-[10px] font-bold bg-rose-100 text-rose-800 px-2 py-0.5 rounded flex items-center gap-1">
+                            ⚠️ Reenviado a U{att.assignedRemedialUnitId}
+                          </span>
+                        )}
                       </div>
                       <p className="text-xs text-slate-500 mt-0.5">
                         {att.unitTitle} • {new Date(att.timestamp).toLocaleString('es-CR')}
@@ -294,6 +304,19 @@ export const TeacherPortal: React.FC<Props> = ({
                             <li key={lIdx}>{log}</li>
                           ))}
                         </ul>
+                      </div>
+                    )}
+
+                    {/* Midterm Diagnostic & Remedial Assignment */}
+                    {att.assignedRemedialUnitId && (
+                      <div className="bg-rose-50 border border-rose-200 p-3.5 rounded-xl space-y-1 text-rose-950">
+                        <p className="font-bold text-xs flex items-center gap-1.5">
+                          <AlertTriangle className="w-4 h-4 text-rose-600" />
+                          <span>Diagnóstico y Re-enrutamiento Pedagógico Asignado:</span>
+                        </p>
+                        <p className="text-xs text-rose-900">
+                          El estudiante no alcanzó el puntaje mínimo de mitad de curso (14/20 pts). El algoritmo diagnóstico determinó mayor debilidad en la <strong>Unidad {att.assignedRemedialUnitId}</strong> y bloqueó el avance a los Bloques 3 y 4 hasta que el alumno complete el refuerzo obligatorio de esa unidad.
+                        </p>
                       </div>
                     )}
 

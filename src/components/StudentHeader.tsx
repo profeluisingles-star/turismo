@@ -115,6 +115,25 @@ export const StudentHeader: React.FC<Props> = ({
               <span className="font-semibold text-orange-300">{stats.streakDays}d racha</span>
             </div>
 
+            {/* Midterm Status / Remedial Alert Pill */}
+            {stats.remedialUnitId ? (
+              <div
+                className="bg-red-500/20 border border-red-500/50 rounded-lg px-2.5 py-1.5 flex items-center space-x-1.5 text-red-300 font-bold animate-pulse"
+                title={`El examen de mitad de curso asignó reforzar la Unidad ${stats.remedialUnitId}`}
+              >
+                <span>⚠️</span>
+                <span>Reforzar U{stats.remedialUnitId}</span>
+              </div>
+            ) : stats.midtermPassed ? (
+              <div
+                className="bg-emerald-500/20 border border-emerald-500/40 rounded-lg px-2.5 py-1.5 flex items-center space-x-1 text-emerald-300 font-semibold"
+                title="Punto de control de mitad de plataforma aprobado exitosamente"
+              >
+                <span>🎖️</span>
+                <span>Mitad Aprobada</span>
+              </div>
+            ) : null}
+
             {/* Audio Speed Selector */}
             <div className="bg-slate-800/90 border border-slate-700 rounded-lg px-2.5 py-1.5 flex items-center space-x-1.5">
               <Volume2 className="w-4 h-4 text-cyan-400" />

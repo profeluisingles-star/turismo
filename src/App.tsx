@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { UNITS_DATA, getFinalExamUnit } from './data/curriculumData';
+import { UNITS_DATA, getFinalExamUnit, getMidtermExamUnit } from './data/curriculumData';
 import { UnitData, StudentProfile, UserStats, ExamAttempt } from './types';
 import {
   getStoredProfile,
@@ -47,6 +47,20 @@ export default function App() {
 
   // Select a unit to study
   const handleSelectUnit = (unit: UnitData) => {
+    // Pedagogical progression security gate:
+    // 1. Units 7-12 are strictly locked until Midterm Exam (Unit 50) is approved (>= 14/20)
+    // 2. Units require sequential mastery (previous unit passed >= 14/20) unless it's the active remedial target
+    const isMidtermBlockerActive = unit.id >= 7 && !stats.midtermPassed;
+    const isUnlocked =
+      (stats.unlockedUnits.includes(unit.id) && !isMidtermBlockerActive) ||
+      stats.remedialUnitId === unit.id ||
+      unit.id === 50 ||
+      unit.id === 99;
+
+    if (!isUnlocked) {
+      return;
+    }
+
     setSelectedUnit(unit);
     setActiveView('study');
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -60,6 +74,27 @@ export default function App() {
     }
     setActiveView('exam');
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // Start mandatory midterm checkpoint exam (Blocks 1 and 2: Units 1 to 6)
+  const handleStartMidtermExam = () => {
+    if (!profile?.name) {
+      setIsRegistrationOpen(true);
+      return;
+    }
+    setSelectedUnit(getMidtermExamUnit());
+    setActiveView('exam');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // Navigate to assigned remedial unit
+  const handleSelectRemedialUnit = (unitId: number) => {
+    const targetUnit = UNITS_DATA.find((u) => u.id === unitId);
+    if (targetUnit) {
+      setSelectedUnit(targetUnit);
+      setActiveView('study');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   };
 
   // Start comprehensive final exam (Blocks 1-4)
@@ -86,10 +121,10 @@ export default function App() {
     const updated: UserStats = {
       ...stats,
       unlockedUnits: allUnitIds,
+      midtermPassed: true,
     };
     saveStoredStats(updated);
     setStats(updated);
-    alert('Modo Docente: Se han desbloqueado las 12 unidades del programa para demostración en clase.');
   };
 
   // Reset student progress for clean testing
@@ -153,6 +188,7 @@ export default function App() {
             onSelectUnit={handleSelectUnit}
             onOpenPdfGuide={() => setIsPdfGuideOpen(true)}
             onStartFinalExam={handleStartFinalExam}
+            onStartMidtermExam={handleStartMidtermExam}
           />
         )}
 
@@ -162,6 +198,7 @@ export default function App() {
             speechRate={speechRate}
             bestScore={stats.unitScores[selectedUnit.id]?.bestScore}
             passed={stats.completedUnits.includes(selectedUnit.id)}
+            isRemedial={Boolean(stats.remedialUnitId === selectedUnit.id)}
             onStartExam={handleStartExam}
             onBack={() => {
               setActiveView('units');
@@ -176,8 +213,13 @@ export default function App() {
             profile={profile}
             speechRate={speechRate}
             onFinish={handleExamFinish}
+            onNavigateToUnit={handleSelectRemedialUnit}
             onExit={() => {
-              setActiveView('study');
+              if (selectedUnit.id === 50) {
+                setActiveView('units');
+              } else {
+                setActiveView('study');
+              }
               window.scrollTo({ top: 0, behavior: 'smooth' });
             }}
           />

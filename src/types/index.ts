@@ -33,6 +33,8 @@ export interface QuestionItem {
   acceptableAnswers?: string[]; // Synonyms or variations
   explanation: string;
   points: number;
+  sourceUnitId?: number; // Origin unit 1..12
+  skillCategory?: 'listening' | 'transcription' | 'translation' | 'vocabulary' | 'grammar';
 }
 
 export interface UnitData {
@@ -78,7 +80,16 @@ export interface ExamAttempt {
     studentAnswer: string;
     correctAnswer: string;
     isCorrect: boolean;
+    sourceUnitId?: number;
+    skillCategory?: string;
   }[];
+  diagnosticWeaknesses?: {
+    unitId: number;
+    unitTitle: string;
+    mistakesCount: number;
+    skillsFailed: string[];
+  }[];
+  assignedRemedialUnitId?: number | null;
 }
 
 export interface UserStats {
@@ -90,6 +101,9 @@ export interface UserStats {
   streakDays: number;
   lastActiveDate: string;
   badges: string[];
+  midtermPassed?: boolean;
+  remedialUnitId?: number | null; // Unit student was sent back to
+  midtermWeaknesses?: string[];
 }
 
 export interface Badge {

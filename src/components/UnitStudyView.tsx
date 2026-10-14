@@ -12,6 +12,7 @@ import {
   CheckCircle2,
   Play,
   RotateCcw,
+  AlertCircle,
 } from 'lucide-react';
 
 interface Props {
@@ -19,6 +20,7 @@ interface Props {
   speechRate: number;
   bestScore?: number;
   passed?: boolean;
+  isRemedial?: boolean;
   onStartExam: () => void;
   onBack: () => void;
 }
@@ -28,6 +30,7 @@ export const UnitStudyView: React.FC<Props> = ({
   speechRate,
   bestScore,
   passed,
+  isRemedial,
   onStartExam,
   onBack,
 }) => {
@@ -46,6 +49,40 @@ export const UnitStudyView: React.FC<Props> = ({
 
   return (
     <div className="max-w-5xl mx-auto p-4 sm:p-6 space-y-6">
+      {/* Remedial Reinforcement Banner */}
+      {isRemedial && (
+        <div className="bg-gradient-to-r from-red-600 via-rose-600 to-red-700 text-white rounded-2xl p-5 sm:p-6 shadow-xl border border-red-300 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 animate-in fade-in">
+          <div className="flex items-start space-x-3.5">
+            <div className="p-3 bg-white/20 rounded-2xl shrink-0 mt-0.5">
+              <AlertCircle className="w-7 h-7 text-amber-200" />
+            </div>
+            <div className="space-y-1">
+              <div className="flex items-center space-x-2">
+                <span className="bg-amber-400 text-slate-950 font-black text-[10px] px-2.5 py-0.5 rounded-full uppercase tracking-wider">
+                  Misión Pedagógica de Refuerzo
+                </span>
+                <span className="text-xs text-red-200 font-semibold">
+                  Examen de Mitad de Curso
+                </span>
+              </div>
+              <h3 className="font-extrabold text-base sm:text-lg">
+                Nivel Específico Asignado para Reforzar Competencias
+              </h3>
+              <p className="text-xs sm:text-sm text-red-100 max-w-2xl leading-relaxed">
+                El control diagnóstico de mitad de curso identificó que debes consolidar los temas de esta unidad. Para garantizar que estés en el camino correcto hacia la fluidez, repasa el <strong>vocabulario con pronunciación</strong>, practica los <strong>ejercicios de escucha</strong> y realiza la <strong>traducción</strong>. Al aprobar la evaluación oficial de esta unidad con al menos 14/20 pts, completarás el refuerzo y quedarás habilitado para reintentar el Examen de Mitad de Curso.
+              </p>
+            </div>
+          </div>
+
+          <button
+            onClick={() => setActiveTab('practice')}
+            className="shrink-0 py-3 px-5 bg-white hover:bg-slate-100 text-red-950 font-black text-xs rounded-xl shadow-lg transition cursor-pointer"
+          >
+            Practicar Ahora
+          </button>
+        </div>
+      )}
+
       {/* Unit Hero Banner */}
       <div className="bg-gradient-to-r from-emerald-800 via-teal-800 to-slate-900 rounded-2xl p-6 sm:p-8 text-white shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div className="space-y-2">

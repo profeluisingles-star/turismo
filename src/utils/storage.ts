@@ -52,6 +52,12 @@ export const ALL_BADGES: Badge[] = [
     icon: '🛡️',
   },
   {
+    id: 'midterm_master',
+    title: 'Control de Mitad de Curso Aprobado',
+    description: 'Superaste con éxito el examen checkpoint de los Bloques 1 y 2.',
+    icon: '🎖️',
+  },
+  {
     id: 'tourism_graduate',
     title: 'Especialista Graduado Costa Rica',
     description: 'Completaste las 12 unidades del programa oficial.',
@@ -78,7 +84,13 @@ export function getStoredStats(): UserStats {
   try {
     const raw = localStorage.getItem(STORAGE_KEYS.STATS);
     if (raw) {
-      return JSON.parse(raw);
+      const parsed = JSON.parse(raw);
+      return {
+        ...parsed,
+        midtermPassed: parsed.midtermPassed ?? false,
+        remedialUnitId: parsed.remedialUnitId ?? null,
+        midtermWeaknesses: parsed.midtermWeaknesses ?? [],
+      };
     }
   } catch {}
 
@@ -91,6 +103,9 @@ export function getStoredStats(): UserStats {
     streakDays: 1,
     lastActiveDate: new Date().toISOString().split('T')[0],
     badges: [],
+    midtermPassed: false,
+    remedialUnitId: null,
+    midtermWeaknesses: [],
   };
 }
 
@@ -109,15 +124,127 @@ export function getStoredExamAttempts(): ExamAttempt[] {
   }
 }
 
-export function saveExamAttempt(attempt: ExamAttempt): UserStats {
-  try {
-    const attempts = getStoredExamAttempts();
-    attempts.unshift(attempt);
-    localStorage.setItem(STORAGE_KEYS.EXAM_ATTEMPTS, JSON.stringify(attempts));
-  } catch {}
+/**
+ * Diagnostic analysis helper for Midterm Exam answers
+ */
+export function analyzeMidtermDiagnostics(answers: ExamAttempt['answers']) {
+  const unitMistakes: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0 };
+  const skillMistakes: Record<string, number> = {
+    listening: 0,
+    transcription: 0,
+    translation: 0,
+    vocabulary: 0,
+    grammar: 0,
+  };
 
+  answers.forEach((ans) => {
+    if (!ans.isCorrect) {
+      if (ans.sourceUnitId && ans.sourceUnitId >= 1 && ans.sourceUnitId <= 6) {
+        unitMistakes[ans.sourceUnitId] = (unitMistakes[ans.sourceUnitId] || 0) + 1;
+      }
+      if (ans.skillCategory) {
+        skillMistakes[ans.skillCategory] = (skillMistakes[ans.skillCategory] || 0) + 1;
+      }
+    }
+  });
+
+  // Find worst unit
+  let worstUnitId = 1;
+  let maxMistakes = -1;
+  for (let u = 1; u <= 6; u++) {
+    if (unitMistakes[u] > maxMistakes) {
+      maxMistakes = unitMistakes[u];
+      worstUnitId = u;
+    }
+  }
+
+  // Find worst skill
+  let worstSkill = 'vocabulary';
+  let maxSkillMistakes = -1;
+  Object.entries(skillMistakes).forEach(([skill, count]) => {
+    if (count > maxSkillMistakes) {
+      maxSkillMistakes = count;
+      worstSkill = skill;
+    }
+  });
+
+  return {
+    unitMistakes,
+    skillMistakes,
+    worstUnitId,
+    worstSkill,
+  };
+}
+
+export function saveExamAttempt(attempt: ExamAttempt): UserStats {
   const currentStats = getStoredStats();
   const unitId = attempt.unitId;
+
+  // Handle Midterm Checkpoint (Unit ID 50)
+  if (unitId === 50) {
+    if (attempt.passed) {
+      currentStats.midtermPassed = true;
+      currentStats.remedialUnitId = null;
+      currentStats.midtermWeaknesses = [];
+      if (!currentStats.completedUnits.includes(50)) {
+        currentStats.completedUnits.push(50);
+      }
+      // Unlock Unit 7!
+      if (!currentStats.unlockedUnits.includes(7)) {
+        currentStats.unlockedUnits.push(7);
+        currentStats.unlockedUnits.sort((a, b) => a - b);
+      }
+      if (!currentStats.badges.includes('midterm_master')) {
+        currentStats.badges.push('midterm_master');
+      }
+    } else {
+      // Failed Midterm Checkpoint -> Run diagnostic & assign remediation
+      const diag = analyzeMidtermDiagnostics(attempt.answers);
+      currentStats.remedialUnitId = diag.worstUnitId;
+      currentStats.midtermPassed = false;
+      currentStats.midtermWeaknesses = [
+        `Mayor debilidad en Unidad ${diag.worstUnitId} (${diag.unitMistakes[diag.worstUnitId]} errores)`,
+        `Habilidad a reforzar: ${diag.worstSkill}`,
+      ];
+      attempt.assignedRemedialUnitId = diag.worstUnitId;
+    }
+  } else if (unitId <= 6) {
+    // Check if student was remediating this unit
+    if (currentStats.remedialUnitId === unitId && attempt.passed) {
+      currentStats.remedialUnitId = null; // Remediation successful!
+    }
+
+    if (attempt.passed) {
+      if (!currentStats.completedUnits.includes(unitId)) {
+        currentStats.completedUnits.push(unitId);
+      }
+      if (unitId < 6) {
+        const nextUnitId = unitId + 1;
+        if (!currentStats.unlockedUnits.includes(nextUnitId)) {
+          currentStats.unlockedUnits.push(nextUnitId);
+          currentStats.unlockedUnits.sort((a, b) => a - b);
+        }
+      } else if (unitId === 6) {
+        // Unit 6 passed: Unlock the Midterm Checkpoint (Unit 50), NOT Unit 7!
+        if (!currentStats.unlockedUnits.includes(50)) {
+          currentStats.unlockedUnits.push(50);
+          currentStats.unlockedUnits.sort((a, b) => a - b);
+        }
+      }
+    }
+  } else if (unitId >= 7 && unitId <= 12) {
+    // Advanced units (Blocks 3 & 4)
+    if (attempt.passed) {
+      if (!currentStats.completedUnits.includes(unitId)) {
+        currentStats.completedUnits.push(unitId);
+      }
+      const nextUnitId = unitId + 1;
+      if (nextUnitId <= 12 && !currentStats.unlockedUnits.includes(nextUnitId)) {
+        currentStats.unlockedUnits.push(nextUnitId);
+        currentStats.unlockedUnits.sort((a, b) => a - b);
+      }
+    }
+  }
 
   // Update unit scores
   const prevRecord = currentStats.unitScores[unitId] || { bestScore: 0, attempts: 0, passed: false };
@@ -134,18 +261,6 @@ export function saveExamAttempt(attempt: ExamAttempt): UserStats {
   // Add XP
   currentStats.xp += attempt.score * 10;
   if (attempt.score === 20) currentStats.xp += 100; // Bonus for perfect score
-
-  // Progression: Unlock next unit if passed (>= 14/20 pts or 70%)
-  if (passed) {
-    if (!currentStats.completedUnits.includes(unitId)) {
-      currentStats.completedUnits.push(unitId);
-    }
-    const nextUnitId = unitId + 1;
-    if (nextUnitId <= 12 && !currentStats.unlockedUnits.includes(nextUnitId)) {
-      currentStats.unlockedUnits.push(nextUnitId);
-      currentStats.unlockedUnits.sort((a, b) => a - b);
-    }
-  }
 
   // Badges check
   const newBadges = [...currentStats.badges];
@@ -177,5 +292,12 @@ export function saveExamAttempt(attempt: ExamAttempt): UserStats {
 
   currentStats.badges = newBadges;
   saveStoredStats(currentStats);
+
+  try {
+    const attempts = getStoredExamAttempts();
+    attempts.unshift(attempt);
+    localStorage.setItem(STORAGE_KEYS.EXAM_ATTEMPTS, JSON.stringify(attempts));
+  } catch {}
+
   return currentStats;
 }
