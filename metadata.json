@@ -1,0 +1,6 @@
+{
+  "name": "English for Tourism - Profe Luis Academy",
+  "description": "Plataforma educativa de inglés para hotelería y turismo rural en Costa Rica. Incluye 12 unidades, prácticas de escucha, evaluaciones de 20 pts con 3 vidas, protección antifraude y reportes a profeluisingles@gmail.com.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
