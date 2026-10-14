@@ -8,6 +8,7 @@ import {
   GraduationCap,
   Sparkles,
   BookOpen,
+  FileText,
 } from 'lucide-react';
 
 interface Props {
@@ -17,6 +18,7 @@ interface Props {
   onSpeechRateChange: (rate: number) => void;
   onOpenProfile: () => void;
   onOpenTeacherPortal: () => void;
+  onOpenPdfGuide: () => void;
   activeView: 'units' | 'resources' | 'teacher';
   onNavigate: (view: 'units' | 'resources' | 'teacher') => void;
 }
@@ -28,6 +30,7 @@ export const StudentHeader: React.FC<Props> = ({
   onSpeechRateChange,
   onOpenProfile,
   onOpenTeacherPortal,
+  onOpenPdfGuide,
   activeView,
   onNavigate,
 }) => {
@@ -162,6 +165,15 @@ export const StudentHeader: React.FC<Props> = ({
             >
               <Sparkles className="w-3.5 h-3.5" />
               <span>Recursos & Práctica Capstone</span>
+            </button>
+
+            <button
+              onClick={onOpenPdfGuide}
+              className="px-3 py-1.5 rounded-lg text-xs font-bold flex items-center space-x-1.5 transition cursor-pointer bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-500 hover:to-emerald-500 text-white shadow-sm"
+              title="Ver, descargar o imprimir la guía de estudio completa en PDF"
+            >
+              <FileText className="w-3.5 h-3.5" />
+              <span>📄 Guía de Examen Final (PDF)</span>
             </button>
           </nav>
 

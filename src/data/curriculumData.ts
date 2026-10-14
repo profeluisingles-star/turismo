@@ -3001,3 +3001,58 @@ export const CAPSTONE_CASE = {
     },
   ],
 };
+
+// Grammar Reference Summary Table (Page 15)
+export const GRAMMAR_REFERENCE_TABLE = [
+  { structure: 'I am / she is / they are', use: 'Identidad y estado', exampleEn: 'They are our guests.', exampleEs: 'Ellos son nuestros huéspedes.' },
+  { structure: 'Was / were', use: 'Situaciones pasadas', exampleEn: 'The rooms were ready.', exampleEs: 'Las habitaciones estaban listas.' },
+  { structure: 'There is / are', use: 'Existencia singular/plural', exampleEn: 'There are two cabins.', exampleEs: 'Hay dos cabinas.' },
+  { structure: 'A / an / the', use: 'Artículo general y específico', exampleEn: 'There is an elevator. The elevator is new.', exampleEs: 'Hay un ascensor. El ascensor es nuevo.' },
+  { structure: 'This / that / these / those', use: 'Distancia y número', exampleEn: 'These are your keys.', exampleEs: 'Estas son sus llaves.' },
+  { structure: 'Have / has', use: 'Posesión / características', exampleEn: 'The room has a balcony.', exampleEs: 'La habitación tiene balcón.' },
+  { structure: 'Some / any', use: 'Cantidad indefinida', exampleEn: 'We have some fruit. Do you have any milk?', exampleEs: 'Tenemos fruta. ¿Tiene leche?' },
+  { structure: 'Much / many', use: 'Incontables / contables', exampleEn: 'How much coffee? How many towels?', exampleEs: '¿Cuánto café? ¿Cuántas toallas?' },
+  { structure: 'In / on / at', use: 'Tiempo y lugar', exampleEn: 'In July; on Monday; at 3 p.m.', exampleEs: 'En julio; el lunes; a las 3 p.m.' },
+  { structure: 'Do / does', use: 'Preguntas habituales', exampleEn: 'Does breakfast start at seven?', exampleEs: '¿El desayuno empieza a las siete?' },
+  { structure: 'Did / past simple', use: 'Acciones terminadas', exampleEn: 'Did you visit the farm?', exampleEs: '¿Visitó la finca?' },
+  { structure: 'Can / could / would', use: 'Habilidad, petición, cortesía', exampleEn: 'Could I see your passport?', exampleEs: '¿Podría ver su pasaporte?' },
+  { structure: 'Must / should', use: 'Obligación y consejo', exampleEn: 'You must stay on the trail.', exampleEs: 'Debe permanecer en el sendero.' },
+  { structure: 'Comparatives', use: 'Comparar dos elementos', exampleEn: 'This trail is shorter.', exampleEs: 'Este sendero es más corto.' },
+  { structure: 'Superlatives', use: 'Destacar entre varios', exampleEn: 'It is the longest route.', exampleEs: 'Es la ruta más larga.' },
+];
+
+// Evaluation Rubric (Page 22)
+export const ASSESSMENT_RUBRIC = [
+  { criterion: 'Vocabulario', maxPts: 4, excellent: 'Vocabulario pertinente, técnico y variado (4)', developing: 'Algunas imprecisiones léxicas (2)', initial: 'Muy limitado, recurre al español (1)' },
+  { criterion: 'Gramática', maxPts: 4, excellent: 'Oraciones claras, tiempos y concordancia correctos (4)', developing: 'Errores menores que no impiden entender (2)', initial: 'Errores graves que afectan la comprensión (1)' },
+  { criterion: 'Interacción Oral / Escucha', maxPts: 4, excellent: 'Responde con cortesía, fluidez y buena comprensión (4)', developing: 'Requiere apoyo o repetición ocasional (2)', initial: 'Depende de lectura o no comprende instrucciones (1)' },
+  { criterion: 'Atención al Cliente', maxPts: 4, excellent: 'Propone soluciones profesionales con empatía (4)', developing: 'Soluciones parciales o actitud fría (2)', initial: 'No logra atender la necesidad del huésped (1)' },
+  { criterion: 'Pronunciación y Fluidez', maxPts: 4, excellent: 'Fácil de comprender, entonación natural (4)', developing: 'Comprensible con esfuerzo del interlocutor (2)', initial: 'Muy difícil de comprender por interferencia (1)' },
+];
+
+/**
+ * Generate a Grand Final Exam unit combining 20 balanced questions from all 12 units
+ */
+export function getFinalExamUnit(): UnitData {
+  const allQuestions = UNITS_DATA.flatMap((u) => u.questionBank);
+  return {
+    id: 99,
+    blockId: 5,
+    blockTitle: 'Evaluación Integradora Final',
+    blockProduct: 'Certificación Oficial de Competencias',
+    title: 'Examen Final Comprensivo (Bloques 1-4)',
+    learningOutcome: 'Demostrar dominio integral de recepción, reservas, guiado, quejas y entrevistas de hospitalidad',
+    vocabulary: UNITS_DATA.flatMap((u) => u.vocabulary).slice(0, 20),
+    grammarTitle: 'Síntesis Gramatical Completa de Hospitalidad y Turismo',
+    grammarPoints: [
+      { rule: 'Dominio de TO BE, Presente, Pasado, Modales y Comparativos', exampleEn: 'I am ready for the final exam.', exampleEs: 'Estoy listo para el examen final.' }
+    ],
+    dialogue: [
+      { speaker: 'Examiner', role: 'staff', en: 'Welcome to your final certification exam.', es: 'Bienvenido a su examen final de certificación.' },
+      { speaker: 'Student', role: 'guest', en: 'Thank you, professor. I am prepared.', es: 'Gracias, profesor. Estoy preparado.' }
+    ],
+    speakingChallenge: 'Simulación completa de jornada laboral: desde el saludo y check-in hasta la resolución de quejas y recomendación de tours.',
+    questionBank: allQuestions,
+  };
+}
+

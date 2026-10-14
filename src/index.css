@@ -1,1 +1,38 @@
 @import "tailwindcss";
+
+@media print {
+  body {
+    background-color: white !important;
+    color: #0f172a !important;
+    font-size: 11pt !important;
+  }
+
+  header, footer, nav, .no-print, button:not(.print-show) {
+    display: none !important;
+  }
+
+  .print-only {
+    display: block !important;
+  }
+
+  .print-page-break {
+    page-break-before: always !important;
+    break-before: page !important;
+  }
+
+  .print-avoid-break {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  @page {
+    size: A4;
+    margin: 15mm;
+  }
+
+  /* Force background colors and borders in print */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+}

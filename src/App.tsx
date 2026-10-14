@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { UNITS_DATA } from './data/curriculumData';
+import { UNITS_DATA, getFinalExamUnit } from './data/curriculumData';
 import { UnitData, StudentProfile, UserStats, ExamAttempt } from './types';
 import {
   getStoredProfile,
@@ -14,11 +14,13 @@ import { UnitStudyView } from './components/UnitStudyView';
 import { QuizEngine } from './components/QuizEngine';
 import { ResourcesView } from './components/ResourcesView';
 import { TeacherPortal } from './components/TeacherPortal';
+import { PdfStudyGuideModal } from './components/PdfStudyGuideModal';
 
 export default function App() {
   const [profile, setProfile] = useState<StudentProfile | null>(() => getStoredProfile());
   const [stats, setStats] = useState<UserStats>(() => getStoredStats());
   const [isRegistrationOpen, setIsRegistrationOpen] = useState<boolean>(() => !getStoredProfile()?.name);
+  const [isPdfGuideOpen, setIsPdfGuideOpen] = useState<boolean>(false);
   const [activeView, setActiveView] = useState<'units' | 'study' | 'exam' | 'resources' | 'teacher'>('units');
   const [selectedUnit, setSelectedUnit] = useState<UnitData | null>(null);
   const [speechRate, setSpeechRate] = useState<number>(1.0); // 1.0x or 0.8x
@@ -56,6 +58,17 @@ export default function App() {
       setIsRegistrationOpen(true);
       return;
     }
+    setActiveView('exam');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // Start comprehensive final exam (Blocks 1-4)
+  const handleStartFinalExam = () => {
+    if (!profile?.name) {
+      setIsRegistrationOpen(true);
+      return;
+    }
+    setSelectedUnit(getFinalExamUnit());
     setActiveView('exam');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -108,6 +121,13 @@ export default function App() {
         onSave={handleSaveProfile}
       />
 
+      {/* Printable Master PDF Study Guide Modal */}
+      <PdfStudyGuideModal
+        isOpen={isPdfGuideOpen}
+        profile={profile}
+        onClose={() => setIsPdfGuideOpen(false)}
+      />
+
       {/* Main Global Header */}
       <StudentHeader
         profile={profile}
@@ -116,6 +136,7 @@ export default function App() {
         onSpeechRateChange={setSpeechRate}
         onOpenProfile={() => setIsRegistrationOpen(true)}
         onOpenTeacherPortal={() => setActiveView('teacher')}
+        onOpenPdfGuide={() => setIsPdfGuideOpen(true)}
         activeView={activeView === 'units' || activeView === 'resources' || activeView === 'teacher' ? activeView : 'units'}
         onNavigate={(view) => {
           setActiveView(view);
@@ -130,6 +151,8 @@ export default function App() {
             units={UNITS_DATA}
             stats={stats}
             onSelectUnit={handleSelectUnit}
+            onOpenPdfGuide={() => setIsPdfGuideOpen(true)}
+            onStartFinalExam={handleStartFinalExam}
           />
         )}
 
@@ -161,7 +184,10 @@ export default function App() {
         )}
 
         {activeView === 'resources' && (
-          <ResourcesView speechRate={speechRate} />
+          <ResourcesView
+            speechRate={speechRate}
+            onOpenPdfGuide={() => setIsPdfGuideOpen(true)}
+          />
         )}
 
         {activeView === 'teacher' && (

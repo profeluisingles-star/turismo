@@ -16,13 +16,16 @@ import {
   XCircle,
   HelpCircle,
   Sparkles,
+  Printer,
+  FileText,
 } from 'lucide-react';
 
 interface Props {
   speechRate: number;
+  onOpenPdfGuide?: () => void;
 }
 
-export const ResourcesView: React.FC<Props> = ({ speechRate }) => {
+export const ResourcesView: React.FC<Props> = ({ speechRate, onOpenPdfGuide }) => {
   const [activeTab, setActiveTab] = useState<'phrasebook' | 'phrasal' | 'verbs' | 'flashcards' | 'capstone'>('phrasebook');
   const [verbSearch, setVerbSearch] = useState('');
   const [flippedCards, setFlippedCards] = useState<Record<number, boolean>>({});
@@ -49,16 +52,28 @@ export const ResourcesView: React.FC<Props> = ({ speechRate }) => {
     <div className="max-w-6xl mx-auto p-4 sm:p-6 space-y-6">
       {/* Header */}
       <div className="bg-gradient-to-r from-emerald-900 via-teal-800 to-slate-900 rounded-3xl p-6 sm:p-8 text-white shadow-xl">
-        <div className="space-y-2">
-          <span className="bg-emerald-400 text-slate-950 text-xs font-black px-3 py-1 rounded-full uppercase tracking-wider">
-            Material Didáctico Complementario
-          </span>
-          <h2 className="text-2xl sm:text-3xl font-black text-white">
-            Centro de Recursos, Expresiones y Simulación Capstone
-          </h2>
-          <p className="text-emerald-100/90 text-sm max-w-2xl">
-            Herramientas prácticas para perfeccionar tu fluidez: frases listas para el trabajo, expresiones coloquiales de turistas, lista de verbos, fichas interactivas y simulación de jornada real.
-          </p>
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="space-y-2">
+            <span className="bg-emerald-400 text-slate-950 text-xs font-black px-3 py-1 rounded-full uppercase tracking-wider">
+              Material Didáctico Complementario
+            </span>
+            <h2 className="text-2xl sm:text-3xl font-black text-white">
+              Centro de Recursos, Expresiones y Simulación Capstone
+            </h2>
+            <p className="text-emerald-100/90 text-sm max-w-2xl">
+              Herramientas prácticas para perfeccionar tu fluidez: frases listas para el trabajo, expresiones coloquiales de turistas, lista de verbos, fichas interactivas y simulación de jornada real.
+            </p>
+          </div>
+
+          {onOpenPdfGuide && (
+            <button
+              onClick={onOpenPdfGuide}
+              className="py-3 px-5 bg-white hover:bg-slate-100 text-slate-900 font-black text-xs rounded-xl shadow-lg transition flex items-center justify-center space-x-2 shrink-0 cursor-pointer"
+            >
+              <Printer className="w-4 h-4 text-emerald-700" />
+              <span>📄 Guía de Examen Final en PDF</span>
+            </button>
+          )}
         </div>
       </div>
 
